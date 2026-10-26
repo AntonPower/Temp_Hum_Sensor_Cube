@@ -26,6 +26,6 @@ pio device monitor      # serielle Ausgabe (115200 Baud)
 ## Stand
 
 - [x] Messung über I2C, Ausgabe über Serial
-- [ ] LED-Farbverlauf und Taster
+- [x] LED-Farbverlauf und Taster (kurz drücken: Temperatur 10 s anzeigen, 3 s halten: Einstellungsmodus)
 - [ ] Einstellungsmodus per Browser
 - [ ] Volkszähler-Logging und Stromsparen
