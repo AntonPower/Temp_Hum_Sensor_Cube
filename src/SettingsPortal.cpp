@@ -189,7 +189,8 @@ void handleRoot() {
         "return 'rgb('+c.map(function(v){return Math.round(v*200)})+')'}"
         "function col(t){return grad((t-TG)/SP)}function colH(h){return grad((HG-h)/HS)}</script>"
         "<p class=\"now\"><span id=\"t\">–</span> °C &nbsp; <span id=\"h\">–</span> %</p>"
-        "<script>function u(d){var a=document.activeElement;if(a&&a.tagName=='INPUT')return;"
+        "<script>var L=null;function u(d){L=d;var a=document.activeElement;"
+        "if(a&&a.tagName=='INPUT')return;"
         "var e=document.getElementById('t');"
         "e.textContent=d.t===null?'–':d.t.toFixed(1);e.style.color=d.t===null?'':col(d.t);"
         "e=document.getElementById('h');e.textContent=d.h===null?'–':d.h.toFixed(0);"
@@ -247,7 +248,19 @@ void handleRoot() {
         "document.getElementById('hi').textContent=d.t.length?"
         "Math.round(d.t.length*d.step/3600)+' h gespeichert.':''})"
         "</script>");
-    body += F("<form method=\"post\" action=\"/save\"><h2>Messung und Anzeige</h2>");
+    // Speichern im Hintergrund, die Seite bleibt stehen. Ohne JavaScript normales Absenden.
+    body += F(
+        "<script>function save(f){var a=document.activeElement;if(a&&a.blur)a.blur();"
+        "var e=f.elements,b=new URLSearchParams(new FormData(f)),o=document.getElementById('ok');"
+        "b.append('js','1');o.textContent='…';"
+        "fetch('/save',{method:'POST',body:b}).then(function(r){if(!r.ok)throw 0;"
+        "var n=function(k){return parseFloat(e[k].value.replace(',','.'))};"
+        "TG=n('target');SP=n('span');HG=n('htarget');HS=n('hspan');"
+        "o.textContent='✓ Gespeichert';setTimeout(function(){o.textContent=''},4000);"
+        "if(L)u(L);if(D)show(hours)}).catch(function(){o.textContent='Speichern fehlgeschlagen'});"
+        "return false}</script>"
+        "<form method=\"post\" action=\"/save\" onsubmit=\"return save(this)\">"
+        "<h2>Messung und Anzeige</h2>");
     body += field("Messintervall in Sekunden (10 bis 600), im Diagramm gemittelt alle 10 min",
                   "interval", String(settings.measureIntervalS), "number", INTEGER_INPUT);
     body += field("Wunschtemperatur in °C (grün)", "target",
@@ -258,7 +271,7 @@ void handleRoot() {
                   String(settings.targetHumidity, 0), "number", INTEGER_INPUT);
     body += field("Spanne in % (ab Wunsch ± Spanne voll rot/blau)", "hspan",
                   String(settings.humiditySpan, 0), "number", INTEGER_INPUT);
-    body += F("<button type=\"submit\">Speichern</button></form>");
+    body += F("<button type=\"submit\">Speichern</button> <span id=\"ok\"></span></form>");
     body += F(
         "<p class=\"hint\">Info: Genauigkeit des Sensors (TH06C) laut Datenblatt: Temperatur "
         "typisch ±0,5 °C, höchstens ±1 °C (−10 bis 85 °C). Luftfeuchte typisch ±4 %, "
@@ -267,6 +280,7 @@ void handleRoot() {
 }
 
 void handleSave() {
+    startedAt = millis();
     // Höchstens 10 Minuten, damit jeder Punkt im Verlauf mindestens eine Messung hat
     settings.measureIntervalS = constrain(server.arg("interval").toInt(), 10L, 600L);
     settings.targetTemperature = decimalArg("target");
@@ -276,9 +290,13 @@ void handleSave() {
     settings.save();
 
     // Kein Neustart, sonst ginge der Verlauf im RAM verloren
+    Serial.println("Einstellungen gespeichert");
+    if (server.arg("js") == "1") {
+        server.send(204);
+        return;
+    }
     sendPage(F("<p>Gespeichert.</p><script>setTimeout(function(){location.href='/'},1500)"
                "</script><p><a href=\"/\">Zurück</a></p>"));
-    Serial.println("Einstellungen gespeichert");
 }
 
 void handleView() {
