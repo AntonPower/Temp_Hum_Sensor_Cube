@@ -3,12 +3,13 @@
 #include <Wire.h>
 
 #include "Button.h"
+#include "Clock.h"
+#include "History.h"
 #include "RgbLed.h"
 #include "Settings.h"
 #include "SettingsPortal.h"
 #include "Si7006.h"
 #include "Sleep.h"
-#include "Uploader.h"
 #include "config.h"
 
 Si7006 sensor;
@@ -35,10 +36,10 @@ bool measure() {
     return false;
 }
 
-// Regelmäßige Messung mit Upload an Volkszähler
-void measureAndUpload() {
-    if (measure() && Uploader::configured()) {
-        Uploader::send(lastTemperature, lastHumidity);
+// Regelmäßige Messung, die in den Verlauf eingeht
+void measureAndRecord() {
+    if (measure()) {
+        History::add(lastTemperature, lastHumidity, Clock::now());
     }
 }
 
@@ -94,8 +95,8 @@ void setup() {
         Serial.println("Sensor nicht gefunden (I2C 0x40)");
     }
 
-    measureAndUpload();
-    lastMeasurement = millis();
+    measureAndRecord();
+    lastMeasurement = Clock::now();
 }
 
 void loop() {
@@ -127,20 +128,20 @@ void loop() {
     }
 
     if (SettingsPortal::active()) {
-        // Nur für die Live-Werte auf der Seite, ohne Upload
-        if (millis() - lastMeasurement >= SETTINGS_MEASURE_INTERVAL_MS) {
-            lastMeasurement = millis();
-            measure();
+        // Häufiger messen für die Live-Werte auf der Seite, der Verlauf mittelt
+        if (Clock::now() - lastMeasurement >= SETTINGS_MEASURE_INTERVAL_MS) {
+            lastMeasurement = Clock::now();
+            measureAndRecord();
         }
         delay(1);
         return;
     }
 
     const uint32_t interval = settings.measureIntervalS * 1000UL;
-    const uint32_t elapsed = millis() - lastMeasurement;
+    const uint32_t elapsed = Clock::now() - lastMeasurement;
     if (elapsed >= interval) {
-        lastMeasurement = millis();
-        measureAndUpload();
+        lastMeasurement = Clock::now();
+        measureAndRecord();
         return;
     }
 
@@ -151,12 +152,10 @@ void loop() {
         const bool byButton = Sleep::light(sleepMs, PIN_BUTTON);
         const uint32_t counted = millis() - before;
 
-        if (byButton) {
-            // Restzeit ist unbekannt, Intervall nach dem Tastendruck neu starten
-            lastMeasurement = millis();
-        } else if (counted < sleepMs) {
-            // millis() ist im Schlaf nicht (ganz) weitergelaufen
-            lastMeasurement -= sleepMs - counted;
+        // Beim Wecken per Taster ist die tatsächliche Schlafzeit unbekannt.
+        // Dann geht der Uhr höchstens ein Messintervall verloren.
+        if (!byButton && counted < sleepMs) {
+            Clock::addSleep(sleepMs - counted);
         }
         return;
     }

@@ -1,7 +1,7 @@
 # Temp. Hum. Sensor Cube
 
 Firmware für einen ESP-12 mit TH06/Si7006-Sensor. Der Cube misst Temperatur und
-Luftfeuchtigkeit, loggt die Werte an Volkszähler und zeigt die Temperatur auf
+Luftfeuchtigkeit, speichert den Verlauf der letzten 7 Tage und zeigt die Temperatur auf
 Tastendruck 10 s lang über eine RGB-LED an.
 
 ## Bauen und Flashen
@@ -28,19 +28,21 @@ pio device monitor      # serielle Ausgabe (115200 Baud)
 - [x] Messung über I2C, Ausgabe über Serial
 - [x] LED-Farbverlauf und Taster (kurz drücken: Temperatur 10 s anzeigen, 3 s halten: Einstellungsmodus)
 - [x] Einstellungsmodus per Browser
+- [x] Verlauf der letzten 7 Tage und Stromsparen
 
 ## Einstellungen
 
 Taster 3 s halten: Die LED blinkt langsam violett, und der Cube öffnet das WLAN
 `SensorCube` (Passwort `sensorcube`). Im Browser `http://192.168.4.1` öffnen,
-Werte eintragen und speichern. Der Cube startet danach neu und schaltet das WLAN
-wieder ab. Nochmals 3 s halten beendet den Modus ohne Speichern, ebenso 5 Minuten
+Werte eintragen und speichern. Nochmals 3 s halten beendet den Modus ohne Speichern, ebenso 5 Minuten
 ohne geöffnete Einstellungsseite.
-- [x] Volkszähler-Logging und Stromsparen
 
-## Volkszähler und Stromsparen
+## Verlauf und Stromsparen
 
-Bei jeder regulären Messung schaltet der Cube das WLAN ein, sendet Temperatur
-und Feuchte an die Volkszähler-Middleware und schaltet es wieder aus. Zwischen
-den Messungen schläft er im Light-Sleep, ein Tastendruck weckt ihn sofort auf.
-Wie Volkszähler eingerichtet wird, steht in [docs/volkszaehler.md](docs/volkszaehler.md).
+Der Cube bildet alle 10 Minuten einen Mittelwert und hält die letzten 7 Tage im
+RAM. Das WLAN bleibt dabei aus, zwischen den Messungen schläft er im
+Light-Sleep, ein Tastendruck weckt ihn sofort auf.
+
+Die Diagramme stehen oben auf der Einstellungsseite. Die Zeitachse rechnet die
+Seite mit der Uhr des Handys aus, der Cube braucht keine eigene Uhr. Nach einem
+Stromausfall oder Neu-Flashen beginnt der Verlauf von vorn.
