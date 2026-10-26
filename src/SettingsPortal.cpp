@@ -214,6 +214,9 @@ void handleRoot() {
     body += F("<form method=\"post\" action=\"/save\"><h2>Messung und Anzeige</h2>");
     body += field("Messintervall in Sekunden (10 bis 600)", "interval",
                   String(settings.measureIntervalS), "number", "min=\"10\" max=\"600\"");
+    body += F("<p class=\"hint\">So oft misst der Cube. Im Diagramm erscheint alle 10 Minuten "
+              "ein Punkt mit dem Mittelwert aller Messungen dieser 10 Minuten, dazu ein Punkt "
+              "bei jedem kurzen Tastendruck.</p>");
     body += field("Wunschtemperatur in °C (grün)", "target",
                   String(settings.targetTemperature, 1), "text", DECIMAL_INPUT);
     body += field("Spanne in °C (ab Wunsch ± Spanne voll blau/rot)", "span",
