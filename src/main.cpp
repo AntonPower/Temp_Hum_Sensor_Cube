@@ -5,8 +5,6 @@
 #include "Button.h"
 #include "Clock.h"
 #include "History.h"
-#include "HomeWifi.h"
-#include "TimeSync.h"
 #include "RgbLed.h"
 #include "Settings.h"
 #include "SettingsPortal.h"
@@ -43,15 +41,6 @@ void measureAndRecord() {
     if (measure()) {
         History::add(lastTemperature, lastHumidity, Clock::now());
         History::saveIfDue(Clock::now());
-    }
-}
-
-// Kurz ins Heim-WLAN, um die Uhrzeit zu holen, danach WLAN wieder aus
-void syncTime() {
-    if (HomeWifi::connect()) {
-        TimeSync::sync();
-        HomeWifi::disconnect();
-        History::fillGapSinceRestore();
     }
 }
 
@@ -108,9 +97,6 @@ void setup() {
         Serial.println("Sensor nicht gefunden (I2C 0x40)");
     }
 
-    if (HomeWifi::configured()) {
-        syncTime();
-    }
     measureAndRecord();
     lastMeasurement = Clock::now();
 }
@@ -150,11 +136,6 @@ void loop() {
             measureAndRecord();
         }
         delay(1);
-        return;
-    }
-
-    if (HomeWifi::configured() && TimeSync::due()) {
-        syncTime();
         return;
     }
 

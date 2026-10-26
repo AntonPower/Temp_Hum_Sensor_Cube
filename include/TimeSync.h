@@ -2,7 +2,8 @@
 
 #include <Arduino.h>
 
-// Echte Uhrzeit per NTP, weitergezählt mit Clock::now()
+// Echte Uhrzeit, vom Browser beim Öffnen der Seite übernommen und mit
+// Clock::now() weitergezählt. Nach einem Stromausfall wieder unbekannt.
 namespace TimeSync {
 
 bool known();
@@ -10,9 +11,7 @@ bool known();
 uint32_t epochAt(uint32_t clockMs);
 uint32_t epochNow();
 
-// Bei bestehender Heim-WLAN-Verbindung aufrufen
-bool sync();
-// true, wenn ein neuer Abgleich fällig ist (täglich, ohne Uhrzeit stündlich)
-bool due();
+// Uhrzeit setzen (Unix-Zeit in Sekunden), ungültige Werte werden ignoriert
+bool set(uint32_t epoch);
 
 }  // namespace TimeSync
