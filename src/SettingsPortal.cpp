@@ -77,10 +77,12 @@ String readingsJson() {
 }
 
 void handleReadings() {
+    startedAt = millis();  // offene Seite hält den Modus am Leben
     server.send(200, F("application/json"), readingsJson());
 }
 
 void handleRoot() {
+    startedAt = millis();
     String body = F(
         "<p class=\"now\"><span id=\"t\">–</span> °C &nbsp; <span id=\"h\">–</span> %</p>"
         "<script>function u(d){document.getElementById('t').textContent="
