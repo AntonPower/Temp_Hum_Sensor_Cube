@@ -3,6 +3,7 @@
 #include <DNSServer.h>
 #include <ESP8266WebServer.h>
 #include <ESP8266WiFi.h>
+#include <LittleFS.h>
 
 #include "Clock.h"
 #include "History.h"
@@ -36,11 +37,39 @@ String field(const char *label, const char *name, const String &value,
     return html;
 }
 
-// Startet als Zahlenfeld, weil der Captive-Portal-Browser Textfelder von sich aus
-// fokussiert. Erst beim Antippen wird es ein Textfeld, damit auch ein Komma geht.
+// Zahlenfeld, das nur während der Eingabe ein Textfeld ist, damit ein Komma geht.
+// Bleibende Textfelder holt der Captive-Portal-Browser immer wieder in den Fokus.
 const char *const DECIMAL_INPUT =
     "step=\"0.1\" inputmode=\"decimal\" onpointerdown=\"if(this.type=='number'){"
-    "this.type='text';this.value=this.value.replace('.',',')}\"";
+    "this.type='text';this.value=this.value.replace('.',',')}\" "
+    "onblur=\"this.value=this.value.replace(',','.');this.type='number'\"";
+// Nur ganze Zahlen, Tastatur ohne Komma und Punkt
+const char *const INTEGER_INPUT =
+    "step=\"1\" inputmode=\"numeric\" pattern=\"[0-9]*\" "
+    "oninput=\"this.value=this.value.replace(/[^0-9]/g,'')\"";
+
+// Zuletzt gewählte Diagrammansicht in Stunden (1, 24 oder 168), im Flash gemerkt
+constexpr const char *VIEW_FILE = "/ansicht.txt";
+uint16_t chartHours = 0;  // 0 = noch nicht geladen
+
+bool validView(long hours) {
+    return hours == 1 || hours == 24 || hours == 168;
+}
+
+uint16_t loadView() {
+    if (chartHours == 0) {
+        chartHours = 24;
+        File f = LittleFS.open(VIEW_FILE, "r");
+        if (f) {
+            const long hours = f.readString().toInt();
+            if (validView(hours)) {
+                chartHours = hours;
+            }
+            f.close();
+        }
+    }
+    return chartHours;
+}
 
 // Liest eine Kommazahl, Komma und Punkt sind gleichwertig
 float decimalArg(const char *name) {
@@ -160,7 +189,8 @@ void handleRoot() {
         "return 'rgb('+c.map(function(v){return Math.round(v*200)})+')'}"
         "function col(t){return grad((t-TG)/SP)}function colH(h){return grad((HG-h)/HS)}</script>"
         "<p class=\"now\"><span id=\"t\">–</span> °C &nbsp; <span id=\"h\">–</span> %</p>"
-        "<script>function u(d){var e=document.getElementById('t');"
+        "<script>function u(d){var a=document.activeElement;if(a&&a.tagName=='INPUT')return;"
+        "var e=document.getElementById('t');"
         "e.textContent=d.t===null?'–':d.t.toFixed(1);e.style.color=d.t===null?'':col(d.t);"
         "e=document.getElementById('h');e.textContent=d.h===null?'–':d.h.toFixed(0);"
         "e.style.color=d.h===null?'':colH(d.h)}u(");
@@ -168,14 +198,16 @@ void handleRoot() {
     body += F(");setInterval(function(){fetch('/werte').then(function(r){return r.json()})"
               ".then(u).catch(function(){})},10000)</script>");
     body += F(
-        "<p><button id=\"b1\" onclick=\"show(1)\">1 Stunde</button> "
-        "<button id=\"b24\" onclick=\"show(24)\">1 Tag</button> "
-        "<button id=\"b168\" onclick=\"show(168)\">7 Tage</button></p>"
+        "<p><button id=\"b1\" onclick=\"pick(1)\">1 Stunde</button> "
+        "<button id=\"b24\" onclick=\"pick(24)\">1 Tag</button> "
+        "<button id=\"b168\" onclick=\"pick(168)\">7 Tage</button></p>"
         "<h2>Temperatur</h2><canvas id=\"ct\"></canvas>"
         "<h2>Luftfeuchte</h2><canvas id=\"ch\"></canvas>"
         "<p class=\"hint\" id=\"hi\"></p>"
         "<script>fetch('/zeit?e='+Math.floor(Date.now()/1000)).catch(function(){});"
-        "var D=null,hours=24;"
+        "var D=null,hours=");
+    body += String(loadView());
+    body += F(";"
         // Alle Punkte des Zeitraums nach Zeit sortiert: [Zeit, Wert].
         // Zeitachse aus der Uhr des Handys: Mittelwert i endet vor age + (n-1-i)*step Sekunden
         "function series(k,t0,now){var d=D,v=d[k],n=v.length,p=[];"
@@ -207,6 +239,7 @@ void handleRoot() {
         // Punkt an jeder Messung, bei dichten Punkten (7 Tage) kleiner
         "var R=Math.max(1,Math.min(2.5,(w-L)/p.length/2));p.forEach(function(q){if(q[1]===null)return;"
         "g.fillStyle=cf(q[1]);g.beginPath();g.arc(x(q[0]),y(q[1]),R,0,7);g.fill()})}"
+        "function pick(n){show(n);fetch('/ansicht?h='+n).catch(function(){})}"
         "function show(n){hours=n;[1,24,168].forEach(function(b){"
         "document.getElementById('b'+b).disabled=b==n});if(!D)return;"
         "draw('ct','t','°',1,col);draw('ch','h','%',0,colH)}"
@@ -215,22 +248,19 @@ void handleRoot() {
         "Math.round(d.t.length*d.step/3600)+' h gespeichert.':''})"
         "</script>");
     body += F("<form method=\"post\" action=\"/save\"><h2>Messung und Anzeige</h2>");
-    body += field("Messintervall in Sekunden (10 bis 600)", "interval",
-                  String(settings.measureIntervalS), "number", "min=\"10\" max=\"600\"");
-    body += F("<p class=\"hint\">So oft misst der Cube. Im Diagramm erscheint alle 10 Minuten "
-              "ein Punkt mit dem Mittelwert aller Messungen dieser 10 Minuten, dazu ein Punkt "
-              "bei jedem kurzen Tastendruck.</p>");
+    body += field("Messintervall in Sekunden (10 bis 600), im Diagramm gemittelt alle 10 min",
+                  "interval", String(settings.measureIntervalS), "number", INTEGER_INPUT);
     body += field("Wunschtemperatur in °C (grün)", "target",
                   String(settings.targetTemperature, 1), "number", DECIMAL_INPUT);
     body += field("Spanne in °C (ab Wunsch ± Spanne voll blau/rot)", "span",
                   String(settings.temperatureSpan, 1), "number", DECIMAL_INPUT);
     body += field("Wunsch-Luftfeuchte in % (grün im Diagramm)", "htarget",
-                  String(settings.targetHumidity, 0), "number", "step=\"1\" min=\"0\" max=\"100\"");
+                  String(settings.targetHumidity, 0), "number", INTEGER_INPUT);
     body += field("Spanne in % (ab Wunsch ± Spanne voll rot/blau)", "hspan",
-                  String(settings.humiditySpan, 0), "number", "step=\"1\" min=\"1\"");
+                  String(settings.humiditySpan, 0), "number", INTEGER_INPUT);
     body += F("<button type=\"submit\">Speichern</button></form>");
     body += F(
-        "<p class=\"hint\">Genauigkeit des Sensors (TH06C) laut Datenblatt: Temperatur "
+        "<p class=\"hint\">Info: Genauigkeit des Sensors (TH06C) laut Datenblatt: Temperatur "
         "typisch ±0,5 °C, höchstens ±1 °C (−10 bis 85 °C). Luftfeuchte typisch ±4 %, "
         "höchstens ±5 % (bei 0 bis 80 %).</p>");
     sendPage(body);
@@ -241,13 +271,28 @@ void handleSave() {
     settings.measureIntervalS = constrain(server.arg("interval").toInt(), 10L, 600L);
     settings.targetTemperature = decimalArg("target");
     settings.temperatureSpan = max(0.1f, decimalArg("span"));
-    settings.targetHumidity = constrain(server.arg("htarget").toFloat(), 0.0f, 100.0f);
-    settings.humiditySpan = max(1.0f, server.arg("hspan").toFloat());
+    settings.targetHumidity = constrain(server.arg("htarget").toInt(), 0L, 100L);
+    settings.humiditySpan = max(1L, server.arg("hspan").toInt());
     settings.save();
 
     // Kein Neustart, sonst ginge der Verlauf im RAM verloren
-    sendPage(F("<p>Gespeichert.</p><p><a href=\"/\">Zurück</a></p>"));
+    sendPage(F("<p>Gespeichert.</p><script>setTimeout(function(){location.href='/'},1500)"
+               "</script><p><a href=\"/\">Zurück</a></p>"));
     Serial.println("Einstellungen gespeichert");
+}
+
+void handleView() {
+    startedAt = millis();
+    const long hours = server.arg("h").toInt();
+    if (validView(hours) && hours != loadView()) {
+        chartHours = hours;
+        File f = LittleFS.open(VIEW_FILE, "w");
+        if (f) {
+            f.print(hours);
+            f.close();
+        }
+    }
+    server.send(204);
 }
 
 void handleNotFound() {
@@ -278,6 +323,7 @@ void start() {
     server.on("/werte", HTTP_GET, handleReadings);
     server.on("/verlauf", HTTP_GET, handleHistory);
     server.on("/zeit", HTTP_GET, handleTime);
+    server.on("/ansicht", HTTP_GET, handleView);
     server.onNotFound(handleNotFound);
     server.begin();
 
