@@ -16,7 +16,7 @@ constexpr uint8_t PIN_TM_DIO  = 0;
 constexpr uint32_t MEASURE_INTERVAL_MS = 60UL * 1000UL;
 
 // RGB-LED: true, wenn die LED eine gemeinsame Anode hat (Pin LOW = an)
-constexpr bool LED_ACTIVE_LOW = false;
+constexpr bool LED_ACTIVE_LOW = true;
 
 // Temperaturanzeige (wird später über die Weboberfläche einstellbar)
 constexpr float TARGET_TEMPERATURE = 21.0f;   // Wunschtemperatur = grün
