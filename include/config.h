@@ -30,3 +30,9 @@ constexpr uint32_t SETTINGS_MEASURE_INTERVAL_MS = 10UL * 1000UL;  // Live-Werte 
 
 // Light-Sleep zwischen den Messungen (Taster weckt auf)
 constexpr bool USE_LIGHT_SLEEP = true;
+
+// Heim-WLAN und Uhrzeit
+constexpr const char *HOSTNAME = "sensorcube";  // erreichbar unter http://sensorcube.local
+constexpr uint32_t WIFI_CONNECT_TIMEOUT_MS = 15UL * 1000UL;
+constexpr const char *NTP_SERVER = "pool.ntp.org";
+constexpr const char *TIMEZONE = "CET-1CEST,M3.5.0,M10.5.0/3";  // Deutschland

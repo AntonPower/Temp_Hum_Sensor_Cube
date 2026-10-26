@@ -32,17 +32,24 @@ pio device monitor      # serielle Ausgabe (115200 Baud)
 
 ## Einstellungen
 
-Taster 3 s halten: Die LED blinkt langsam violett, und der Cube öffnet das WLAN
-`SensorCube` (Passwort `sensorcube`). Im Browser `http://192.168.4.1` öffnen,
-Werte eintragen und speichern. Nochmals 3 s halten beendet den Modus ohne Speichern, ebenso 5 Minuten
+Taster 3 s halten: Die LED blinkt langsam violett. Ist ein Heim-WLAN
+eingetragen, verbindet sich der Cube damit und ist unter
+`http://sensorcube.local` erreichbar. Sonst öffnet er das eigene WLAN
+`SensorCube` (Passwort `sensorcube`) mit der Seite unter `http://192.168.4.1`.
+Dort Werte eintragen und speichern. Nochmals 3 s halten beendet den Modus ohne Speichern, ebenso 5 Minuten
 ohne geöffnete Einstellungsseite.
 
 ## Verlauf und Stromsparen
 
-Der Cube bildet alle 10 Minuten einen Mittelwert und hält die letzten 7 Tage im
-RAM. Das WLAN bleibt dabei aus, zwischen den Messungen schläft er im
-Light-Sleep, ein Tastendruck weckt ihn sofort auf.
+Der Cube bildet alle 10 Minuten einen Mittelwert, hält die letzten 7 Tage im RAM
+und sichert sie stündlich in den Flash (LittleFS). Das WLAN bleibt dabei aus,
+zwischen den Messungen schläft er im Light-Sleep, ein Tastendruck weckt ihn
+sofort auf.
+
+Mit eingetragenem Heim-WLAN verbindet er sich beim Start und dann einmal am Tag
+für wenige Sekunden, um die Uhrzeit per NTP zu holen. Damit weiß er nach einem
+Stromausfall, wie lange er aus war, und trägt die Zeit als Lücke im Verlauf ein.
+Ohne Heim-WLAN geht das nicht, der Verlauf läuft dann ohne Lücke weiter.
 
 Die Diagramme stehen oben auf der Einstellungsseite. Die Zeitachse rechnet die
-Seite mit der Uhr des Handys aus, der Cube braucht keine eigene Uhr. Nach einem
-Stromausfall oder Neu-Flashen beginnt der Verlauf von vorn.
+Seite mit der Uhr des Geräts aus, auf dem sie geöffnet ist.

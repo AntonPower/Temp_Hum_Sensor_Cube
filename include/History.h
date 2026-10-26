@@ -2,8 +2,8 @@
 
 #include <Arduino.h>
 
-// Verlauf der letzten 7 Tage im RAM, ein Mittelwert alle 10 Minuten.
-// Nach einem Neustart beginnt er von vorn.
+// Verlauf der letzten 7 Tage, ein Mittelwert alle 10 Minuten. Liegt im RAM und
+// wird stündlich in den Flash gesichert, damit er einen Stromausfall übersteht.
 namespace History {
 
 constexpr uint32_t STEP_S = 10UL * 60UL;
@@ -18,5 +18,12 @@ float temperatureAt(size_t i);
 float humidityAt(size_t i);
 // Sekunden seit dem Ende des jüngsten Punkts
 uint32_t ageOfNewestS(uint32_t nowMs);
+
+// Beim Start: gesicherten Verlauf aus dem Flash laden
+void restore();
+// Sobald die Uhrzeit bekannt ist: Lücke seit dem letzten Sichern auffüllen
+void fillGapSinceRestore();
+// Regelmäßig aufrufen, sichert höchstens einmal pro Stunde
+void saveIfDue(uint32_t nowMs);
 
 }  // namespace History

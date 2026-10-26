@@ -4,7 +4,7 @@
 
 namespace {
 
-constexpr uint32_t MAGIC = 0x53434232;  // "SCB2", bei Strukturänderung erhöhen
+constexpr uint32_t MAGIC = 0x53434233;  // "SCB3", bei Strukturänderung erhöhen
 
 struct Stored {
     uint32_t magic;
