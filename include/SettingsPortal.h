@@ -10,5 +10,7 @@ void stop();
 bool active();
 // Regelmäßig aus loop() aufrufen, solange active()
 void handle();
+// Aktuelle Messwerte für die Anzeige auf der Einstellungsseite
+void setReadings(float temperature, float humidity);
 
 }  // namespace SettingsPortal

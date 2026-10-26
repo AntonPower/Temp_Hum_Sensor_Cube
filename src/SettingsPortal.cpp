@@ -14,6 +14,8 @@ ESP8266WebServer server(80);
 DNSServer dns;
 bool running = false;
 uint32_t startedAt = 0;
+float currentTemperature = NAN;
+float currentHumidity = NAN;
 
 String escape(const char *text) {
     String out;
@@ -58,15 +60,36 @@ void sendPage(const String &body) {
         "label{display:block;margin:.8em 0}input{display:block;width:100%;"
         "box-sizing:border-box;padding:.4em;font-size:1em}"
         "button{margin-top:1em;padding:.6em 1.2em;font-size:1em}"
-        "h2{margin-top:1.5em;font-size:1.1em}</style></head><body>"
+        "h2{margin-top:1.5em;font-size:1.1em}.now{font-size:2em;margin:.5em 0}</style></head><body>"
         "<h1>Sensor Cube</h1>");
     html += body;
     html += F("</body></html>");
     server.send(200, F("text/html; charset=utf-8"), html);
 }
 
+String readingsJson() {
+    String json = F("{\"t\":");
+    json += isnan(currentTemperature) ? String("null") : String(currentTemperature, 2);
+    json += F(",\"h\":");
+    json += isnan(currentHumidity) ? String("null") : String(currentHumidity, 1);
+    json += '}';
+    return json;
+}
+
+void handleReadings() {
+    server.send(200, F("application/json"), readingsJson());
+}
+
 void handleRoot() {
-    String body = F("<form method=\"post\" action=\"/save\"><h2>WLAN</h2>");
+    String body = F(
+        "<p class=\"now\"><span id=\"t\">–</span> °C &nbsp; <span id=\"h\">–</span> %</p>"
+        "<script>function u(d){document.getElementById('t').textContent="
+        "d.t===null?'–':d.t.toFixed(1);document.getElementById('h').textContent="
+        "d.h===null?'–':d.h.toFixed(0)}u(");
+    body += readingsJson();
+    body += F(");setInterval(function(){fetch('/werte').then(function(r){return r.json()})"
+              ".then(u).catch(function(){})},10000)</script>");
+    body += F("<form method=\"post\" action=\"/save\"><h2>WLAN</h2>");
     body += field("Name (SSID)", "ssid", escape(settings.wifiSsid));
     body += field("Passwort (leer lassen = unverändert)", "pass", "", "password");
     body += F("<h2>Volkszähler</h2>");
@@ -112,6 +135,11 @@ void handleNotFound() {
 
 }  // namespace
 
+void setReadings(float temperature, float humidity) {
+    currentTemperature = temperature;
+    currentHumidity = humidity;
+}
+
 void start() {
     WiFi.forceSleepWake();
     delay(1);
@@ -121,6 +149,7 @@ void start() {
     dns.start(53, "*", WiFi.softAPIP());
     server.on("/", HTTP_GET, handleRoot);
     server.on("/save", HTTP_POST, handleSave);
+    server.on("/werte", HTTP_GET, handleReadings);
     server.onNotFound(handleNotFound);
     server.begin();
 

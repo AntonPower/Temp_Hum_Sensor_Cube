@@ -26,3 +26,4 @@ constexpr uint32_t BUTTON_LONG_PRESS_MS = 3000;  // langer Druck = Einstellungsm
 constexpr const char *SETTINGS_AP_SSID = "SensorCube";
 constexpr const char *SETTINGS_AP_PASSWORD = "sensorcube";  // mind. 8 Zeichen
 constexpr uint32_t SETTINGS_TIMEOUT_MS = 10UL * 60UL * 1000UL;  // ohne Speichern zurück
+constexpr uint32_t SETTINGS_MEASURE_INTERVAL_MS = 10UL * 1000UL;  // Live-Werte auf der Seite

@@ -25,6 +25,7 @@ bool measure() {
     if (sensor.read(t, h)) {
         lastTemperature = t;
         lastHumidity = h;
+        SettingsPortal::setReadings(t, h);
         Serial.printf("Temperatur: %.2f °C, Feuchte: %.1f %%\n", t, h);
         return true;
     }
@@ -116,7 +117,9 @@ void loop() {
         led.off();
     }
 
-    if (millis() - lastMeasurement >= settings.measureIntervalS * 1000UL) {
+    const uint32_t interval = SettingsPortal::active() ? SETTINGS_MEASURE_INTERVAL_MS
+                                                       : settings.measureIntervalS * 1000UL;
+    if (millis() - lastMeasurement >= interval) {
         lastMeasurement = millis();
         measure();
     }
