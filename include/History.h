@@ -19,6 +19,13 @@ float humidityAt(size_t i);
 // Sekunden seit dem Ende des jüngsten Punkts
 uint32_t ageOfNewestS(uint32_t nowMs);
 
+// Einzelne Messung per Tastendruck, zusätzlich zu den Mittelwerten
+constexpr size_t MANUAL_CAPACITY = 200;
+void addManual(float temperature, float humidity, uint32_t nowMs);
+size_t manualSize();
+// i = 0 ist der älteste, ageS = Sekunden seit der Messung
+void manualAt(size_t i, uint32_t nowMs, uint32_t &ageS, float &temperature, float &humidity);
+
 // Beim Start: gesicherten Verlauf aus dem Flash laden
 void restore();
 // Sobald die Uhrzeit bekannt ist: Lücke seit dem letzten Sichern auffüllen

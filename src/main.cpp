@@ -45,8 +45,12 @@ void measureAndRecord() {
 }
 
 void showTemperature() {
-    // Frischer Wert für die Anzeige, sonst der letzte gültige
-    measure();
+    // Frischer Wert für die Anzeige, sonst der letzte gültige.
+    // Jeder Tastendruck landet als eigener Punkt im Verlauf.
+    if (measure()) {
+        History::addManual(lastTemperature, lastHumidity, Clock::now());
+        History::saveIfDue(Clock::now());
+    }
     if (isnan(lastTemperature)) {
         return;
     }

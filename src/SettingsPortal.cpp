@@ -102,6 +102,27 @@ void handleHistory() {
             }
         }
     }
+    // Manuelle Punkte als [Alter in s, Temperatur, Feuchte]
+    chunk += F("],\"m\":[");
+    for (size_t i = 0; i < History::manualSize(); i++) {
+        uint32_t ageS;
+        float t, h;
+        History::manualAt(i, Clock::now(), ageS, t, h);
+        if (i > 0) {
+            chunk += ',';
+        }
+        chunk += '[';
+        chunk += String(ageS);
+        chunk += ',';
+        chunk += String(t, 2);
+        chunk += ',';
+        chunk += String(h, 1);
+        chunk += ']';
+        if (chunk.length() > 1000) {
+            server.sendContent(chunk);
+            chunk = "";
+        }
+    }
     chunk += F("]}");
     server.sendContent(chunk);
     server.sendContent("");
@@ -118,31 +139,40 @@ void handleRoot() {
     body += F(");setInterval(function(){fetch('/werte').then(function(r){return r.json()})"
               ".then(u).catch(function(){})},10000)</script>");
     body += F(
-        "<h2>Temperatur, letzte 7 Tage</h2><canvas id=\"ct\"></canvas>"
-        "<h2>Luftfeuchte, letzte 7 Tage</h2><canvas id=\"ch\"></canvas>"
+        "<p><button id=\"b1\" onclick=\"show(1)\">1 Tag</button> "
+        "<button id=\"b7\" onclick=\"show(7)\">7 Tage</button></p>"
+        "<h2>Temperatur</h2><canvas id=\"ct\"></canvas>"
+        "<h2>Luftfeuchte</h2><canvas id=\"ch\"></canvas>"
         "<p class=\"hint\" id=\"hi\"></p>"
-        "<script>fetch('/zeit?e='+Math.floor(Date.now()/1000)).catch(function(){});"
+        "<script>fetch('/zeit?e='+Math.floor(Date.now()/1000)).catch(function(){});var D=null,days=1;"
         // Zeitachse aus der Uhr des Handys: Punkt i endet vor age + (n-1-i)*step Sekunden
-        "function draw(id,v,unit,col,d){var c=document.getElementById(id),w=c.clientWidth,H=160,"
+        "function draw(id,k,unit,col){var d=D,c=document.getElementById(id),w=c.clientWidth,H=160,"
         "r=window.devicePixelRatio||1;c.width=w*r;c.height=H*r;var g=c.getContext('2d');g.scale(r,r);"
-        "g.font='11px sans-serif';var now=Date.now(),span=6048e5,t0=now-span,L=34,B=16,"
-        "x=function(t){return L+(t-t0)/span*(w-L-4)};"
-        "var lo=1e9,hi=-1e9;v.forEach(function(a){if(a!==null){lo=Math.min(lo,a);hi=Math.max(hi,a)}});"
+        "g.font='11px sans-serif';var now=Date.now(),span=days*864e5,t0=now-span,L=40,B=16,"
+        "x=function(t){return L+(t-t0)/span*(w-L-4)},v=d[k],n=v.length,pts=[],man=[];"
+        "v.forEach(function(a,i){var t=a===null?0:now-(d.age+(n-1-i)*d.step+d.step/2)*1000;"
+        "pts.push(a===null||t<t0?null:[t,a])});"
+        "d.m.forEach(function(p){var t=now-p[0]*1000;if(t>=t0)man.push([t,p[k=='t'?1:2]])});"
+        // Achse vom niedrigsten bis zum höchsten Wert im sichtbaren Zeitraum
+        "var lo=1e9,hi=-1e9;pts.concat(man).forEach(function(p){if(p){lo=Math.min(lo,p[1]);hi=Math.max(hi,p[1])}});"
         "if(lo>hi){g.fillStyle='#666';g.fillText('Noch keine Daten',L,H/2);return}"
-        "lo=Math.floor(lo-.5);hi=Math.ceil(hi+.5);var y=function(a){return 4+(hi-a)/(hi-lo)*(H-B-8)};"
-        "g.strokeStyle='#ddd';g.fillStyle='#666';var m=new Date(t0);m.setHours(24,0,0,0);"
-        "for(;m.getTime()<now;m.setDate(m.getDate()+1)){var X=x(m.getTime());g.beginPath();"
-        "g.moveTo(X,4);g.lineTo(X,H-B);g.stroke();g.fillText(m.toLocaleDateString('de-DE',"
-        "{weekday:'short'}),X+2,H-4)}"
-        "g.fillText(hi+unit,0,12);g.fillText(lo+unit,0,H-B);"
-        "g.strokeStyle=col;g.lineWidth=1.5;g.beginPath();var on=false,n=v.length;"
-        "v.forEach(function(a,i){if(a===null){on=false;return}"
-        "var t=now-(d.age+(n-1-i)*d.step+d.step/2)*1000;if(t<t0)return;"
-        "on?g.lineTo(x(t),y(a)):g.moveTo(x(t),y(a));on=true});g.stroke()}"
-        "fetch('/verlauf').then(function(r){return r.json()}).then(function(d){"
-        "draw('ct',d.t,'°','#d9480f',d);draw('ch',d.h,'%','#1971c2',d);"
-        "document.getElementById('hi').textContent=d.t.length?'Mittelwerte alle '+d.step/60+"
-        "' Minuten, '+Math.round(d.t.length*d.step/3600)+' h gespeichert.':''})"
+        "var pad=hi-lo<.2?.1:0,a0=lo-pad,a1=hi+pad,y=function(a){return 6+(a1-a)/(a1-a0)*(H-B-12)};"
+        "g.strokeStyle='#ddd';g.fillStyle='#666';var m=new Date(t0),stepH=days==1?3:24;"
+        "m.setMinutes(0,0,0);m.setHours(Math.ceil(m.getHours()/stepH+1e-9)*stepH);"
+        "for(;m.getTime()<now;m.setHours(m.getHours()+stepH)){var X=x(m.getTime());g.beginPath();"
+        "g.moveTo(X,4);g.lineTo(X,H-B);g.stroke();g.fillText(days==1?m.getHours()+' h':"
+        "m.toLocaleDateString('de-DE',{weekday:'short'}),X+2,H-4)}"
+        "var f=k=='t'?1:0;g.fillText(hi.toFixed(f)+unit,0,y(hi)+4);g.fillText(lo.toFixed(f)+unit,0,y(lo)+4);"
+        "g.strokeStyle=col;g.lineWidth=1.5;g.beginPath();var on=false;"
+        "pts.forEach(function(p){if(!p){on=false;return}"
+        "on?g.lineTo(x(p[0]),y(p[1])):g.moveTo(x(p[0]),y(p[1]));on=true});g.stroke();"
+        "g.fillStyle=col;man.forEach(function(p){g.beginPath();g.arc(x(p[0]),y(p[1]),3,0,7);g.fill()})}"
+        "function show(n){days=n;document.getElementById('b1').disabled=n==1;"
+        "document.getElementById('b7').disabled=n==7;if(!D)return;"
+        "draw('ct','t','°','#d9480f');draw('ch','h','%','#1971c2')}"
+        "fetch('/verlauf').then(function(r){return r.json()}).then(function(d){D=d;show(days);"
+        "document.getElementById('hi').textContent=d.t.length?'Linie: Mittelwerte alle '+d.step/60+"
+        "' Minuten, Punkte: Messungen per Tastendruck. '+Math.round(d.t.length*d.step/3600)+' h gespeichert.':''})"
         "</script>");
     body += F("<form method=\"post\" action=\"/save\"><h2>Messung und Anzeige</h2>");
     body += field("Messintervall in Sekunden (10 bis 600)", "interval",
