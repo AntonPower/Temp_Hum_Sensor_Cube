@@ -108,7 +108,9 @@ void setup() {
 void loop() {
     switch (button.poll()) {
         case Button::Event::ShortPress:
-            if (!SettingsPortal::active()) {
+            if (SettingsPortal::active()) {
+                toggleSettingsMode();  // kurzer Druck beendet den Einstellungsmodus
+            } else {
                 showTemperature();
             }
             break;

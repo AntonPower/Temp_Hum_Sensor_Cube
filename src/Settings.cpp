@@ -4,7 +4,7 @@
 
 namespace {
 
-constexpr uint32_t MAGIC = 0x53434234;  // "SCB4", bei Strukturänderung erhöhen
+constexpr uint32_t MAGIC = 0x53434235;  // "SCB5", bei Strukturänderung erhöhen
 
 struct Stored {
     uint32_t magic;
@@ -31,6 +31,8 @@ void Settings::setDefaults() {
     measureIntervalS = 60;
     targetTemperature = 21.0f;
     temperatureSpan = 4.0f;
+    targetHumidity = 50.0f;
+    humiditySpan = 15.0f;
 }
 
 void Settings::load() {

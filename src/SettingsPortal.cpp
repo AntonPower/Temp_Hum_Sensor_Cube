@@ -130,20 +130,27 @@ void handleHistory() {
 
 void handleRoot() {
     startedAt = millis();
-    // Farbverlauf wie die LED: Wunsch ± Spanne von blau über grün bis rot
+    // Farbverlauf wie die LED: Wunsch ± Spanne von blau über grün bis rot.
+    // Feuchte umgekehrt: trocken rot, feucht blau.
     String body = F("<script>var TG=");
     body += String(settings.targetTemperature, 1);
     body += F(",SP=");
     body += String(settings.temperatureSpan, 1);
+    body += F(",HG=");
+    body += String(settings.targetHumidity, 0);
+    body += F(",HS=");
+    body += String(settings.humiditySpan, 0);
     body += F(
-        ";function col(t){var x=Math.max(-1,Math.min(1,(t-TG)/SP)),c;"
-        "c=x<-.5?[0,(x+1)*2,1]:x<0?[0,1,-x*2]:x<.5?[x*2,1,0]:[1,(1-x)*2,0];"
+        ";function grad(x){x=Math.max(-1,Math.min(1,x));"
+        "var c=x<-.5?[0,(x+1)*2,1]:x<0?[0,1,-x*2]:x<.5?[x*2,1,0]:[1,(1-x)*2,0];"
         // etwas abgedunkelt, damit Gelb und Cyan auf Weiß lesbar bleiben
-        "return 'rgb('+c.map(function(v){return Math.round(v*200)})+')'}</script>"
+        "return 'rgb('+c.map(function(v){return Math.round(v*200)})+')'}"
+        "function col(t){return grad((t-TG)/SP)}function colH(h){return grad((HG-h)/HS)}</script>"
         "<p class=\"now\"><span id=\"t\">–</span> °C &nbsp; <span id=\"h\">–</span> %</p>"
         "<script>function u(d){var e=document.getElementById('t');"
         "e.textContent=d.t===null?'–':d.t.toFixed(1);e.style.color=d.t===null?'':col(d.t);"
-        "document.getElementById('h').textContent=d.h===null?'–':d.h.toFixed(0)}u(");
+        "e=document.getElementById('h');e.textContent=d.h===null?'–':d.h.toFixed(0);"
+        "e.style.color=d.h===null?'':colH(d.h)}u(");
     body += readingsJson();
     body += F(");setInterval(function(){fetch('/werte').then(function(r){return r.json()})"
               ".then(u).catch(function(){})},10000)</script>");
@@ -154,7 +161,8 @@ void handleRoot() {
         "<h2>Temperatur</h2><canvas id=\"ct\"></canvas>"
         "<h2>Luftfeuchte</h2><canvas id=\"ch\"></canvas>"
         "<p class=\"hint\">Jeder Punkt ist eine Messung: Mittelwerte alle 10 Minuten und "
-        "Messungen per Tastendruck. Die Temperatur hat die Farbe der LED.</p>"
+        "Messungen per Tastendruck. Farben wie die LED: grün = Wunschwert. "
+        "Temperatur kalt blau, warm rot. Feuchte trocken rot, feucht blau.</p>"
         "<p class=\"hint\" id=\"hi\"></p>"
         "<script>fetch('/zeit?e='+Math.floor(Date.now()/1000)).catch(function(){});"
         "var D=null,hours=24;"
@@ -191,7 +199,7 @@ void handleRoot() {
         "g.fillStyle=cf(q[1]);g.beginPath();g.arc(x(q[0]),y(q[1]),R,0,7);g.fill()})}"
         "function show(n){hours=n;[1,24,168].forEach(function(b){"
         "document.getElementById('b'+b).disabled=b==n});if(!D)return;"
-        "draw('ct','t','°',1,col);draw('ch','h','%',0,function(){return '#1971c2'})}"
+        "draw('ct','t','°',1,col);draw('ch','h','%',0,colH)}"
         "fetch('/verlauf').then(function(r){return r.json()}).then(function(d){D=d;show(hours);"
         "document.getElementById('hi').textContent=d.t.length?"
         "Math.round(d.t.length*d.step/3600)+' h gespeichert.':''})"
@@ -203,6 +211,10 @@ void handleRoot() {
                   String(settings.targetTemperature, 1), "number", "step=\"0.5\"");
     body += field("Spanne in °C (ab Wunsch ± Spanne voll blau/rot)", "span",
                   String(settings.temperatureSpan, 1), "number", "step=\"0.5\" min=\"0.5\"");
+    body += field("Wunsch-Luftfeuchte in % (grün im Diagramm)", "htarget",
+                  String(settings.targetHumidity, 0), "number", "step=\"1\" min=\"0\" max=\"100\"");
+    body += field("Spanne in % (ab Wunsch ± Spanne voll rot/blau)", "hspan",
+                  String(settings.humiditySpan, 0), "number", "step=\"1\" min=\"1\"");
     body += F("<button type=\"submit\">Speichern</button></form>");
     sendPage(body);
 }
@@ -212,6 +224,8 @@ void handleSave() {
     settings.measureIntervalS = constrain(server.arg("interval").toInt(), 10L, 600L);
     settings.targetTemperature = server.arg("target").toFloat();
     settings.temperatureSpan = max(0.5f, server.arg("span").toFloat());
+    settings.targetHumidity = constrain(server.arg("htarget").toFloat(), 0.0f, 100.0f);
+    settings.humiditySpan = max(1.0f, server.arg("hspan").toFloat());
     settings.save();
 
     // Kein Neustart, sonst ginge der Verlauf im RAM verloren
