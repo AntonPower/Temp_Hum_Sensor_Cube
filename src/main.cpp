@@ -4,6 +4,8 @@
 
 #include "Button.h"
 #include "RgbLed.h"
+#include "Settings.h"
+#include "SettingsPortal.h"
 #include "Si7006.h"
 #include "config.h"
 
@@ -23,6 +25,7 @@ bool measure() {
     if (sensor.read(t, h)) {
         lastTemperature = t;
         lastHumidity = h;
+        SettingsPortal::setReadings(t, h);
         Serial.printf("Temperatur: %.2f °C, Feuchte: %.1f %%\n", t, h);
         return true;
     }
@@ -36,21 +39,29 @@ void showTemperature() {
     if (isnan(lastTemperature)) {
         return;
     }
-    led.showTemperature(lastTemperature, TARGET_TEMPERATURE, TEMPERATURE_SPAN);
+    led.showTemperature(lastTemperature, settings.targetTemperature, settings.temperatureSpan);
     displayActive = true;
     displayStart = millis();
 }
 
-void enterSettingsMode() {
-    // Platzhalter für Schritt 3: Access Point mit Weboberfläche
-    Serial.println("Einstellungsmodus (folgt in Schritt 3)");
-    for (uint8_t i = 0; i < 3; i++) {
-        led.set(255, 0, true);  // violett blinken
-        delay(150);
-        led.off();
-        delay(150);
-    }
+void toggleSettingsMode() {
     displayActive = false;
+    if (SettingsPortal::active()) {
+        SettingsPortal::stop();
+        led.off();
+    } else {
+        SettingsPortal::start();
+    }
+}
+
+// Langsames violettes Blinken, solange der Einstellungsmodus läuft
+void updateSettingsLed() {
+    const bool on = (millis() / 500) % 2 == 0;
+    if (on) {
+        led.set(255, 0, true);
+    } else {
+        led.off();
+    }
 }
 
 void setup() {
@@ -61,6 +72,10 @@ void setup() {
     // WLAN bleibt aus, solange es nicht gebraucht wird
     WiFi.mode(WIFI_OFF);
     WiFi.forceSleepBegin();
+
+    settings.load();
+    Serial.printf("Messintervall %u s, Wunschtemperatur %.1f °C\n",
+                  settings.measureIntervalS, settings.targetTemperature);
 
     led.begin();
     button.begin();
@@ -77,13 +92,24 @@ void setup() {
 void loop() {
     switch (button.poll()) {
         case Button::Event::ShortPress:
-            showTemperature();
+            if (!SettingsPortal::active()) {
+                showTemperature();
+            }
             break;
         case Button::Event::LongPress:
-            enterSettingsMode();
+            toggleSettingsMode();
             break;
         case Button::Event::None:
             break;
+    }
+
+    if (SettingsPortal::active()) {
+        SettingsPortal::handle();
+        if (SettingsPortal::active()) {
+            updateSettingsLed();
+        } else {
+            led.off();  // Zeitüberschreitung
+        }
     }
 
     if (displayActive && millis() - displayStart >= DISPLAY_DURATION_MS) {
@@ -91,9 +117,11 @@ void loop() {
         led.off();
     }
 
-    if (millis() - lastMeasurement >= MEASURE_INTERVAL_MS) {
+    const uint32_t interval = SettingsPortal::active() ? SETTINGS_MEASURE_INTERVAL_MS
+                                                       : settings.measureIntervalS * 1000UL;
+    if (millis() - lastMeasurement >= interval) {
         lastMeasurement = millis();
         measure();
     }
-    delay(10);
+    delay(SettingsPortal::active() ? 1 : 10);
 }
