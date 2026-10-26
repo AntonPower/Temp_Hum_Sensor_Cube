@@ -8,19 +8,19 @@ Raspberry Pi.
 
 Am einfachsten ist das fertige Image für den Raspberry Pi:
 
-1. Image von https://wiki.volkszaehler.org/howto/raspberry_pi_image herunterladen.
+1. Das Raspberry-Pi-Image aus dem Volkszähler-Wiki (https://wiki.volkszaehler.org) herunterladen.
 2. Mit dem Raspberry Pi Imager oder balenaEtcher auf eine SD-Karte schreiben.
 3. Pi per LAN anschließen und starten. Die Weboberfläche ist danach unter
    `http://<IP-des-Pi>/` erreichbar.
 
 Alternativ lässt sich Volkszähler auf einem vorhandenen Linux-Server oder per
-Docker installieren, siehe https://wiki.volkszaehler.org/software/middleware/installation.
+Docker installieren, siehe die Installationsanleitung im Wiki.
 
 ## 2. Kanäle anlegen
 
 1. Die Weboberfläche öffnen und auf **Kanal hinzufügen** klicken.
-2. Einen Kanal **Temperatur** anlegen (Typ "Temperatursensor").
-3. Einen Kanal **Luftfeuchte** anlegen (Typ "Feuchtesensor").
+2. Einen Kanal **Temperatur** anlegen (Kanaltyp für Temperatur).
+3. Einen Kanal **Luftfeuchte** anlegen (Kanaltyp für Luftfeuchtigkeit).
 4. Bei jedem Kanal unter den Details die **UUID** kopieren.
 
 ## 3. Cube einstellen
