@@ -13,6 +13,8 @@ public:
     void begin();
     // Regelmäßig aus loop() aufrufen
     Event poll();
+    // true, solange der Taster losgelassen ist und kein Druck läuft
+    bool idle() const { return !_rawPressed && !_pressed; }
 
 private:
     uint8_t _pin;

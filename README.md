@@ -1,7 +1,7 @@
 # Temp. Hum. Sensor Cube
 
 Firmware für einen ESP-12 mit TH06/Si7006-Sensor. Der Cube misst Temperatur und
-Luftfeuchtigkeit, loggt die Werte an Volkszähler und zeigt die Temperatur auf
+Luftfeuchtigkeit, speichert den Verlauf der letzten 7 Tage und zeigt die Temperatur auf
 Tastendruck 10 s lang über eine RGB-LED an.
 
 ## Bauen und Flashen
@@ -26,14 +26,28 @@ pio device monitor      # serielle Ausgabe (115200 Baud)
 ## Stand
 
 - [x] Messung über I2C, Ausgabe über Serial
-- [x] LED-Farbverlauf und Taster (kurz drücken: Temperatur 10 s anzeigen, 3 s halten: Einstellungsmodus)
+- [x] LED-Farbverlauf und Taster (kurz drücken: Temperatur 10 s anzeigen, 2 s halten: Einstellungsmodus)
 - [x] Einstellungsmodus per Browser
+- [x] Verlauf der letzten 7 Tage und Stromsparen
 
 ## Einstellungen
 
-Taster 3 s halten: Die LED blinkt langsam violett, und der Cube öffnet das WLAN
-`SensorCube` (Passwort `sensorcube`). Im Browser `http://192.168.4.1` öffnen,
-Werte eintragen und speichern. Der Cube startet danach neu und schaltet das WLAN
-wieder ab. Nochmals 3 s halten beendet den Modus ohne Speichern, ebenso 5 Minuten
+Taster 2 s halten: Die LED blinkt langsam violett, und der Cube öffnet das eigene WLAN
+`SensorCube` (Passwort `sensorcube`) mit der Seite unter `http://192.168.4.1`.
+Dort Werte eintragen und speichern. Ein kurzer Druck oder nochmals 2 s halten beendet den Modus ohne Speichern, ebenso 5 Minuten
 ohne geöffnete Einstellungsseite.
-- [ ] Volkszähler-Logging und Stromsparen
+
+## Verlauf und Stromsparen
+
+Der Cube bildet alle 10 Minuten einen Mittelwert, hält die letzten 7 Tage im RAM
+und sichert sie stündlich in den Flash (LittleFS). Das WLAN bleibt dabei aus,
+zwischen den Messungen schläft er im Light-Sleep, ein Tastendruck weckt ihn
+sofort auf.
+
+Beim Öffnen der Seite übernimmt der Cube die Uhrzeit des Handys. Kennt er sie beim
+Sichern, weiß er nach einem Stromausfall, wie lange er aus war, sobald die Seite
+wieder geöffnet wird, und trägt die Zeit als Lücke im Verlauf ein. Ohne Uhrzeit
+läuft der Verlauf ohne Lücke weiter.
+
+Die Diagramme stehen oben auf der Einstellungsseite. Die Zeitachse rechnet die
+Seite mit der Uhr des Geräts aus, auf dem sie geöffnet ist.

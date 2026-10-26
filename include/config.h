@@ -20,10 +20,13 @@ constexpr uint32_t DISPLAY_DURATION_MS = 10UL * 1000UL;
 
 // Taster
 constexpr uint32_t BUTTON_DEBOUNCE_MS = 30;
-constexpr uint32_t BUTTON_LONG_PRESS_MS = 3000;  // langer Druck = Einstellungsmodus
+constexpr uint32_t BUTTON_LONG_PRESS_MS = 2000;  // langer Druck = Einstellungsmodus
 
 // Einstellungsmodus
 constexpr const char *SETTINGS_AP_SSID = "SensorCube";
 constexpr const char *SETTINGS_AP_PASSWORD = "sensorcube";  // mind. 8 Zeichen
 constexpr uint32_t SETTINGS_TIMEOUT_MS = 5UL * 60UL * 1000UL;  // ohne Aktivität auf der Seite zurück
 constexpr uint32_t SETTINGS_MEASURE_INTERVAL_MS = 10UL * 1000UL;  // Live-Werte auf der Seite
+
+// Light-Sleep zwischen den Messungen (Taster weckt auf)
+constexpr bool USE_LIGHT_SLEEP = true;

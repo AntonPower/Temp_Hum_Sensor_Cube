@@ -3,10 +3,13 @@
 #include <Wire.h>
 
 #include "Button.h"
+#include "Clock.h"
+#include "History.h"
 #include "RgbLed.h"
 #include "Settings.h"
 #include "SettingsPortal.h"
 #include "Si7006.h"
+#include "Sleep.h"
 #include "config.h"
 
 Si7006 sensor;
@@ -33,9 +36,21 @@ bool measure() {
     return false;
 }
 
+// Regelmäßige Messung, die in den Verlauf eingeht
+void measureAndRecord() {
+    if (measure()) {
+        History::add(lastTemperature, lastHumidity, Clock::now());
+        History::saveIfDue(Clock::now());
+    }
+}
+
 void showTemperature() {
-    // Frischer Wert für die Anzeige, sonst der letzte gültige
-    measure();
+    // Frischer Wert für die Anzeige, sonst der letzte gültige.
+    // Jeder Tastendruck landet als eigener Punkt im Verlauf.
+    if (measure()) {
+        History::addManual(lastTemperature, lastHumidity, Clock::now());
+        History::saveIfDue(Clock::now());
+    }
     if (isnan(lastTemperature)) {
         return;
     }
@@ -79,20 +94,23 @@ void setup() {
 
     led.begin();
     button.begin();
+    History::restore();
 
     Wire.begin(PIN_I2C_SDA, PIN_I2C_SCL);
     if (!sensor.begin()) {
         Serial.println("Sensor nicht gefunden (I2C 0x40)");
     }
 
-    measure();
-    lastMeasurement = millis();
+    measureAndRecord();
+    lastMeasurement = Clock::now();
 }
 
 void loop() {
     switch (button.poll()) {
         case Button::Event::ShortPress:
-            if (!SettingsPortal::active()) {
+            if (SettingsPortal::active()) {
+                toggleSettingsMode();  // kurzer Druck beendet den Einstellungsmodus
+            } else {
                 showTemperature();
             }
             break;
@@ -117,11 +135,37 @@ void loop() {
         led.off();
     }
 
-    const uint32_t interval = SettingsPortal::active() ? SETTINGS_MEASURE_INTERVAL_MS
-                                                       : settings.measureIntervalS * 1000UL;
-    if (millis() - lastMeasurement >= interval) {
-        lastMeasurement = millis();
-        measure();
+    if (SettingsPortal::active()) {
+        // Häufiger messen für die Live-Werte auf der Seite, der Verlauf mittelt
+        if (Clock::now() - lastMeasurement >= SETTINGS_MEASURE_INTERVAL_MS) {
+            lastMeasurement = Clock::now();
+            measureAndRecord();
+        }
+        delay(1);
+        return;
     }
-    delay(SettingsPortal::active() ? 1 : 10);
+
+    const uint32_t interval = settings.measureIntervalS * 1000UL;
+    const uint32_t elapsed = Clock::now() - lastMeasurement;
+    if (elapsed >= interval) {
+        lastMeasurement = Clock::now();
+        measureAndRecord();
+        return;
+    }
+
+    const uint32_t remaining = interval - elapsed;
+    if (USE_LIGHT_SLEEP && !displayActive && button.idle() && remaining >= 100) {
+        const uint32_t sleepMs = min(remaining, Sleep::MAX_LIGHT_SLEEP_MS);
+        const uint32_t before = millis();
+        const bool byButton = Sleep::light(sleepMs, PIN_BUTTON);
+        const uint32_t counted = millis() - before;
+
+        // Beim Wecken per Taster ist die tatsächliche Schlafzeit unbekannt.
+        // Dann geht der Uhr höchstens ein Messintervall verloren.
+        if (!byButton && counted < sleepMs) {
+            Clock::addSleep(sleepMs - counted);
+        }
+        return;
+    }
+    delay(10);
 }
