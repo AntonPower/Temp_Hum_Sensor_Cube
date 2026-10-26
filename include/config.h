@@ -13,7 +13,7 @@ constexpr uint8_t PIN_TM_CLK  = 2;   // TM1637, in V1 nicht verwendet
 constexpr uint8_t PIN_TM_DIO  = 0;
 
 // RGB-LED: true, wenn die LED eine gemeinsame Anode hat (Pin LOW = an)
-constexpr bool LED_ACTIVE_LOW = false;
+constexpr bool LED_ACTIVE_LOW = true;
 
 // Temperaturanzeige (Wunschtemperatur und Spanne stehen in den Einstellungen)
 constexpr uint32_t DISPLAY_DURATION_MS = 10UL * 1000UL;
