@@ -26,15 +26,15 @@ pio device monitor      # serielle Ausgabe (115200 Baud)
 ## Stand
 
 - [x] Messung über I2C, Ausgabe über Serial
-- [x] LED-Farbverlauf und Taster (kurz drücken: Temperatur 10 s anzeigen, 3 s halten: Einstellungsmodus)
+- [x] LED-Farbverlauf und Taster (kurz drücken: Temperatur 10 s anzeigen, 2 s halten: Einstellungsmodus)
 - [x] Einstellungsmodus per Browser
 - [x] Verlauf der letzten 7 Tage und Stromsparen
 
 ## Einstellungen
 
-Taster 3 s halten: Die LED blinkt langsam violett, und der Cube öffnet das eigene WLAN
+Taster 2 s halten: Die LED blinkt langsam violett, und der Cube öffnet das eigene WLAN
 `SensorCube` (Passwort `sensorcube`) mit der Seite unter `http://192.168.4.1`.
-Dort Werte eintragen und speichern. Ein kurzer Druck oder nochmals 3 s halten beendet den Modus ohne Speichern, ebenso 5 Minuten
+Dort Werte eintragen und speichern. Ein kurzer Druck oder nochmals 2 s halten beendet den Modus ohne Speichern, ebenso 5 Minuten
 ohne geöffnete Einstellungsseite.
 
 ## Verlauf und Stromsparen

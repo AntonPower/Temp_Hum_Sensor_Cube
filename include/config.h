@@ -20,7 +20,7 @@ constexpr uint32_t DISPLAY_DURATION_MS = 10UL * 1000UL;
 
 // Taster
 constexpr uint32_t BUTTON_DEBOUNCE_MS = 30;
-constexpr uint32_t BUTTON_LONG_PRESS_MS = 3000;  // langer Druck = Einstellungsmodus
+constexpr uint32_t BUTTON_LONG_PRESS_MS = 2000;  // langer Druck = Einstellungsmodus
 
 // Einstellungsmodus
 constexpr const char *SETTINGS_AP_SSID = "SensorCube";

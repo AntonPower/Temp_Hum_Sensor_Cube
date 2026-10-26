@@ -36,8 +36,9 @@ String field(const char *label, const char *name, const String &value,
     return html;
 }
 
-// Kommazahlen mit Komma oder Punkt; type="number" ließe je nach Handy nur eines zu
-const char *const DECIMAL_INPUT = "inputmode=\"decimal\" pattern=\"-?[0-9]+([.,][0-9])?\"";
+// Zahlenfeld in 0,1-Schritten. Ein Textfeld würde vom Captive-Portal-Browser
+// immer wieder fokussiert, daher type="number".
+const char *const DECIMAL_INPUT = "step=\"0.1\" inputmode=\"decimal\"";
 
 // Liest eine Kommazahl, Komma und Punkt sind gleichwertig
 float decimalArg(const char *name) {
@@ -157,6 +158,8 @@ void handleRoot() {
         "return 'rgb('+c.map(function(v){return Math.round(v*200)})+')'}"
         "function col(t){return grad((t-TG)/SP)}function colH(h){return grad((HG-h)/HS)}</script>"
         "<p class=\"now\"><span id=\"t\">–</span> °C &nbsp; <span id=\"h\">–</span> %</p>"
+        "<p class=\"hint\">Genauigkeit des Sensors (Si7006) laut Datenblatt: Temperatur "
+        "typisch ±0,4 °C, Luftfeuchte ±5 % (bei 0 bis 80 %).</p>"
         "<script>function u(d){var e=document.getElementById('t');"
         "e.textContent=d.t===null?'–':d.t.toFixed(1);e.style.color=d.t===null?'':col(d.t);"
         "e=document.getElementById('h');e.textContent=d.h===null?'–':d.h.toFixed(0);"
@@ -218,9 +221,9 @@ void handleRoot() {
               "ein Punkt mit dem Mittelwert aller Messungen dieser 10 Minuten, dazu ein Punkt "
               "bei jedem kurzen Tastendruck.</p>");
     body += field("Wunschtemperatur in °C (grün)", "target",
-                  String(settings.targetTemperature, 1), "text", DECIMAL_INPUT);
+                  String(settings.targetTemperature, 1), "number", DECIMAL_INPUT);
     body += field("Spanne in °C (ab Wunsch ± Spanne voll blau/rot)", "span",
-                  String(settings.temperatureSpan, 1), "text", DECIMAL_INPUT);
+                  String(settings.temperatureSpan, 1), "number", DECIMAL_INPUT);
     body += field("Wunsch-Luftfeuchte in % (grün im Diagramm)", "htarget",
                   String(settings.targetHumidity, 0), "number", "step=\"1\" min=\"0\" max=\"100\"");
     body += field("Spanne in % (ab Wunsch ± Spanne voll rot/blau)", "hspan",
