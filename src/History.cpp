@@ -110,7 +110,7 @@ void restore() {
         header.magic == FILE_MAGIC && header.count <= CAPACITY) {
         // Punkte liegen in der Datei vom ältesten zum jüngsten
         const size_t bytes = header.count * sizeof(Point);
-        if (f.read(reinterpret_cast<uint8_t *>(points), bytes) == bytes) {
+        if (size_t(f.read(reinterpret_cast<uint8_t *>(points), bytes)) == bytes) {
             count = header.count;
             head = count % CAPACITY;
             restoredEndEpoch = header.endEpoch;
