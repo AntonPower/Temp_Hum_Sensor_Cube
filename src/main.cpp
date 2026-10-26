@@ -7,6 +7,8 @@
 #include "Settings.h"
 #include "SettingsPortal.h"
 #include "Si7006.h"
+#include "Sleep.h"
+#include "Uploader.h"
 #include "config.h"
 
 Si7006 sensor;
@@ -31,6 +33,13 @@ bool measure() {
     }
     Serial.println("Fehler beim Lesen des Sensors");
     return false;
+}
+
+// Regelmäßige Messung mit Upload an Volkszähler
+void measureAndUpload() {
+    if (measure() && Uploader::configured()) {
+        Uploader::send(lastTemperature, lastHumidity);
+    }
 }
 
 void showTemperature() {
@@ -85,7 +94,7 @@ void setup() {
         Serial.println("Sensor nicht gefunden (I2C 0x40)");
     }
 
-    measure();
+    measureAndUpload();
     lastMeasurement = millis();
 }
 
@@ -117,11 +126,39 @@ void loop() {
         led.off();
     }
 
-    const uint32_t interval = SettingsPortal::active() ? SETTINGS_MEASURE_INTERVAL_MS
-                                                       : settings.measureIntervalS * 1000UL;
-    if (millis() - lastMeasurement >= interval) {
-        lastMeasurement = millis();
-        measure();
+    if (SettingsPortal::active()) {
+        // Nur für die Live-Werte auf der Seite, ohne Upload
+        if (millis() - lastMeasurement >= SETTINGS_MEASURE_INTERVAL_MS) {
+            lastMeasurement = millis();
+            measure();
+        }
+        delay(1);
+        return;
     }
-    delay(SettingsPortal::active() ? 1 : 10);
+
+    const uint32_t interval = settings.measureIntervalS * 1000UL;
+    const uint32_t elapsed = millis() - lastMeasurement;
+    if (elapsed >= interval) {
+        lastMeasurement = millis();
+        measureAndUpload();
+        return;
+    }
+
+    const uint32_t remaining = interval - elapsed;
+    if (USE_LIGHT_SLEEP && !displayActive && button.idle() && remaining >= 100) {
+        const uint32_t sleepMs = min(remaining, Sleep::MAX_LIGHT_SLEEP_MS);
+        const uint32_t before = millis();
+        const bool byButton = Sleep::light(sleepMs, PIN_BUTTON);
+        const uint32_t counted = millis() - before;
+
+        if (byButton) {
+            // Restzeit ist unbekannt, Intervall nach dem Tastendruck neu starten
+            lastMeasurement = millis();
+        } else if (counted < sleepMs) {
+            // millis() ist im Schlaf nicht (ganz) weitergelaufen
+            lastMeasurement -= sleepMs - counted;
+        }
+        return;
+    }
+    delay(10);
 }

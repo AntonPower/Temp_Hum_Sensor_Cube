@@ -27,3 +27,10 @@ constexpr const char *SETTINGS_AP_SSID = "SensorCube";
 constexpr const char *SETTINGS_AP_PASSWORD = "sensorcube";  // mind. 8 Zeichen
 constexpr uint32_t SETTINGS_TIMEOUT_MS = 5UL * 60UL * 1000UL;  // ohne Aktivität auf der Seite zurück
 constexpr uint32_t SETTINGS_MEASURE_INTERVAL_MS = 10UL * 1000UL;  // Live-Werte auf der Seite
+
+// Volkszähler-Upload
+constexpr uint32_t WIFI_CONNECT_TIMEOUT_MS = 15UL * 1000UL;
+constexpr uint16_t HTTP_TIMEOUT_MS = 5000;
+
+// Light-Sleep zwischen den Messungen (Taster weckt auf)
+constexpr bool USE_LIGHT_SLEEP = true;

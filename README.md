@@ -36,4 +36,11 @@ Taster 3 s halten: Die LED blinkt langsam violett, und der Cube öffnet das WLAN
 Werte eintragen und speichern. Der Cube startet danach neu und schaltet das WLAN
 wieder ab. Nochmals 3 s halten beendet den Modus ohne Speichern, ebenso 5 Minuten
 ohne geöffnete Einstellungsseite.
-- [ ] Volkszähler-Logging und Stromsparen
+- [x] Volkszähler-Logging und Stromsparen
+
+## Volkszähler und Stromsparen
+
+Bei jeder regulären Messung schaltet der Cube das WLAN ein, sendet Temperatur
+und Feuchte an die Volkszähler-Middleware und schaltet es wieder aus. Zwischen
+den Messungen schläft er im Light-Sleep, ein Tastendruck weckt ihn sofort auf.
+Wie Volkszähler eingerichtet wird, steht in [docs/volkszaehler.md](docs/volkszaehler.md).
