@@ -36,9 +36,11 @@ String field(const char *label, const char *name, const String &value,
     return html;
 }
 
-// Zahlenfeld in 0,1-Schritten. Ein Textfeld würde vom Captive-Portal-Browser
-// immer wieder fokussiert, daher type="number".
-const char *const DECIMAL_INPUT = "step=\"0.1\" inputmode=\"decimal\"";
+// Startet als Zahlenfeld, weil der Captive-Portal-Browser Textfelder von sich aus
+// fokussiert. Erst beim Antippen wird es ein Textfeld, damit auch ein Komma geht.
+const char *const DECIMAL_INPUT =
+    "step=\"0.1\" inputmode=\"decimal\" onpointerdown=\"if(this.type=='number'){"
+    "this.type='text';this.value=this.value.replace('.',',')}\"";
 
 // Liest eine Kommazahl, Komma und Punkt sind gleichwertig
 float decimalArg(const char *name) {
@@ -158,9 +160,6 @@ void handleRoot() {
         "return 'rgb('+c.map(function(v){return Math.round(v*200)})+')'}"
         "function col(t){return grad((t-TG)/SP)}function colH(h){return grad((HG-h)/HS)}</script>"
         "<p class=\"now\"><span id=\"t\">–</span> °C &nbsp; <span id=\"h\">–</span> %</p>"
-        "<p class=\"hint\">Genauigkeit des Sensors (TH06C) laut Datenblatt: Temperatur "
-        "typisch ±0,5 °C, höchstens ±1 °C (−10 bis 85 °C). Luftfeuchte typisch ±4 %, "
-        "höchstens ±5 % (bei 0 bis 80 %).</p>"
         "<script>function u(d){var e=document.getElementById('t');"
         "e.textContent=d.t===null?'–':d.t.toFixed(1);e.style.color=d.t===null?'':col(d.t);"
         "e=document.getElementById('h');e.textContent=d.h===null?'–':d.h.toFixed(0);"
@@ -230,6 +229,10 @@ void handleRoot() {
     body += field("Spanne in % (ab Wunsch ± Spanne voll rot/blau)", "hspan",
                   String(settings.humiditySpan, 0), "number", "step=\"1\" min=\"1\"");
     body += F("<button type=\"submit\">Speichern</button></form>");
+    body += F(
+        "<p class=\"hint\">Genauigkeit des Sensors (TH06C) laut Datenblatt: Temperatur "
+        "typisch ±0,5 °C, höchstens ±1 °C (−10 bis 85 °C). Luftfeuchte typisch ±4 %, "
+        "höchstens ±5 % (bei 0 bis 80 %).</p>");
     sendPage(body);
 }
 
