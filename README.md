@@ -4,6 +4,37 @@ Firmware für einen ESP-12 mit TH06/Si7006-Sensor. Der Cube misst Temperatur und
 Luftfeuchtigkeit, speichert den Verlauf der letzten 7 Tage und zeigt die Temperatur auf
 Tastendruck 10 s lang über eine RGB-LED an.
 
+![Platine mit leuchtender LED](bilder/Board_led.png)
+
+## Hardware
+
+| Ordner | Inhalt |
+|---|---|
+| [`SCH_and_PCB/`](SCH_and_PCB) | Schaltplan als PDF, Stückliste der Platine (BOM, CSV) und Gerber-Dateien der Platine V1.0 zum Bestellen (EasyEDA) |
+| [`3D parts/`](3D%20parts) | Gehäuse in drei Teilen zum Drucken (`Sensor_Cube_bot.stl`, `Sensor_Cube_middle.stl`, `Sensor_Cube_top.stl`) und das 3D-Modell der bestückten Platine (`3D_Model _V1.0 PCB.obj`) |
+| [`bilder/`](bilder) | Fotos der fertigen Platine |
+
+Die Platine hat einen ESP-12, den Sensor TH06/Si7006, eine RGB-LED, einen Taster,
+einen Spannungsregler AMS1117-3.3 und eine Micro-USB-Buchse zur Versorgung. Die
+vollständige Bauteilliste steht in der BOM.
+
+Für die Gerber-Dateien den Ordner `Gerber_…` als ZIP packen und beim Platinenhersteller
+hochladen, eine Anleitung steht in `How-to-order-PCB.txt`.
+
+### Teile für den Zusammenbau
+
+Neben der bestückten Platine und den drei gedruckten Gehäuseteilen:
+
+| Anzahl | Teil |
+|---|---|
+| 2 | Zylinderschraube mit Innensechskant M4 x 10 mm |
+| 4 | Zylinderschraube mit Innensechskant M4 x 20 mm |
+| 4 | Druckfeder 7/32" x 11/16" |
+
+| Vorderseite | Rückseite |
+|---|---|
+| ![Platine Vorderseite](bilder/Board_front.png) | ![Platine Rückseite](bilder/Board_back.png) |
+
 ## Bauen und Flashen
 
 Das Projekt nutzt [PlatformIO](https://platformio.org/) in VS Code.
