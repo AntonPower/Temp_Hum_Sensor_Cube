@@ -21,6 +21,18 @@ vollständige Bauteilliste steht in der BOM.
 Für die Gerber-Dateien den Ordner `Gerber_…` als ZIP packen und beim Platinenhersteller
 hochladen, eine Anleitung steht in `How-to-order-PCB.txt`.
 
+### Diode in der roten LED-Leitung (nur V1)
+
+Bei der Platine V1 muss eine Diode 1N4148 (oder 1N400x) nachträglich eingelötet werden,
+in Reihe in der roten Leitung zwischen LED und GPIO12, Kathode (Ring) zum ESP.
+
+Warum: Die Anoden der RGB-LED hängen über je 100 Ω an 5 V, die LED ist LOW-aktiv. Zum
+Ausschalten legt der ESP den Pin auf HIGH, das sind aber nur 3,3 V. Über der roten LED
+bleiben so etwa 1,7 V, sie glimmt rot/orange, und GPIO12 bekommt dauerhaft Strom von den
+5 V ab. Die Diode schluckt etwa 0,7 V, damit ist das Glimmen im Gehäuse nicht mehr zu
+sehen und Rot wird kaum dunkler. Grün und Blau brauchen keine Diode, weil ihre
+Flussspannung bei etwa 3 V liegt. An der Software ändert sich nichts.
+
 ### Teile für den Zusammenbau
 
 Neben der bestückten Platine und den drei gedruckten Gehäuseteilen:
@@ -30,6 +42,7 @@ Neben der bestückten Platine und den drei gedruckten Gehäuseteilen:
 | 2 | Zylinderschraube mit Innensechskant M4 x 10 mm |
 | 4 | Zylinderschraube mit Innensechskant M4 x 20 mm |
 | 4 | Druckfeder 7/32" x 11/16" |
+| 1 | Diode 1N4148 oder 1N400x (nur V1, siehe oben) |
 
 | Vorderseite | Rückseite |
 |---|---|
