@@ -14,6 +14,9 @@ Tastendruck 10 s lang über eine RGB-LED an.
 | [`3D parts/`](3D%20parts) | Gehäuse in drei Teilen zum Drucken (`Sensor_Cube_bot.stl`, `Sensor_Cube_middle.stl`, `Sensor_Cube_top.stl`) und das 3D-Modell der bestückten Platine (`3D_Model _V1.0 PCB.obj`) |
 | [`bilder/`](bilder) | Fotos der fertigen Platine |
 
+Das EasyEDA-Projekt mit Schaltplan und Platinenlayout ist öffentlich auf OSHWLab:
+[oshwlab.com/antonpower48/temp_hum-sensor](https://oshwlab.com/antonpower48/temp_hum-sensor)
+
 Die Platine hat einen ESP-12, den Sensor TH06/Si7006, eine RGB-LED, einen Taster,
 einen Spannungsregler AMS1117-3.3 und eine Micro-USB-Buchse zur Versorgung. Die
 vollständige Bauteilliste steht in der BOM.
